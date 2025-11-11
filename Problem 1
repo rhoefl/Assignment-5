@@ -1,0 +1,57 @@
+import torch
+
+t_c = torch.tensor([0.5, 14.0, 15.0, 28.0, 11.0, 
+                    8.0, 3.0, -4.0, 6.0, 13.0, 21.0])
+t_u = torch.tensor([35.7, 55.9, 58.2, 81.9, 56.3, 
+                    48.9, 33.9, 21.8, 48.4, 60.4, 68.4])
+def model(t_u, w2, w1, b):
+    return w2 * t_u**2 + w1 * t_u + b
+def loss_fn(t_p, t_c):
+    return ((t_p - t_c) ** 2).mean()
+def training_loop(t_u, t_c, lr, epochs):
+    params = torch.tensor([1.0, 1.0, 0.0], requires_grad=True)
+    for epoch in range(epochs):
+        t_p = model(t_u, *params) 
+        loss = loss_fn(t_p, t_c)
+
+        loss.backward()
+
+        with torch.no_grad():
+            params -= lr * params.grad
+        params.grad.zero_()
+
+        if epoch % 500 == 0:
+            print(f"lr={lr}, epoch={epoch}, loss={loss.item():.4f}")
+
+    return params
+
+t_un = t_u * 0.01 
+
+learning_rates = [0.1, 0.01, 0.001, 0.0001]
+
+results = {}
+for lr in learning_rates:
+    print(f"\nTraining with learning rate = {lr}")
+    params = training_loop(t_un, t_c, lr, epochs=5000)
+    results[lr] = params
+best_params = results[0.01]
+print("Best Model Params:", best_params)
+
+def linear_model(t_u, w, b):
+    return w * t_u + b
+
+w_lin = 0.5
+b_lin = -10.0  #I cant remember these values 
+
+import matplotlib.pyplot as plt
+
+t_p_nonlinear = model(t_u * 0.01, *best_params).detach()
+t_p_linear = linear_model(t_u, w_lin, b_lin).detach()
+
+plt.scatter(t_u, t_c, label="Actual Data")
+plt.plot(t_u, t_p_linear, label="Linear Model", color='blue')
+plt.plot(t_u, t_p_nonlinear, label="Nonlinear Model", color='red')
+plt.legend()
+plt.xlabel("Unnormalized Temperature (t_u)")
+plt.ylabel("Celsius Temperature (t_c)")
+plt.show()
