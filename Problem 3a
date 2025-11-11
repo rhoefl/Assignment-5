@@ -1,0 +1,33 @@
+import torch.nn as nn
+import time
+
+model_3a = nn.Sequential(
+    nn.Linear(5, 8),
+    nn.ReLU(),
+    nn.Linear(8, 1)
+)
+
+optimizer = torch.optim.Adam(model_3a.parameters(), lr=0.01)
+
+print("\nTraining Model 3a")
+start = time.time()
+
+for epoch in range(201):
+    model_3a.train()
+    y_pred = model_3a(X_train)
+    loss = mse_loss(y_pred, y_train)
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    if epoch % 25 == 0:
+        model_3a.eval()
+        with torch.no_grad():
+            val_pred = model_3a(X_val)
+            val_loss = mse_loss(val_pred, y_val)
+            val_r2 = r2_score_torch(val_pred, y_val)
+        print(f"Epoch {epoch:3d} | Train Loss: {loss.item():.4f} | Val Loss: {val_loss.item():.4f} | Val R²: {val_r2.item():.4f}")
+
+end = time.time()
+print(f"Training Time (3a): {end - start:.2f} seconds")
